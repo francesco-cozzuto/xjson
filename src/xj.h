@@ -193,7 +193,7 @@ void *xj_pool_request(xj_pool_t *pool, size_t size, int aligned);
 #endif
 
 #ifndef xj_MONITOR_VALUE_KINDS
-#define xj_MONITOR_VALUE_KINDS 1
+#define xj_MONITOR_VALUE_KINDS 0
 #endif
 
 typedef struct {
@@ -238,23 +238,36 @@ void _xj_report(xj_context_t *ctx, const char *func, size_t line, const char *fo
 long xj_hash_text(xj_type_t type, xj_generic_t value);
 int  xj_compare_text(xj_type_t t1, xj_type_t t2, xj_generic_t v1, xj_generic_t v2);
 
-
 /* ====================== */
 /* === EXPORTED STUFF === */
 /* ====================== */
 
-typedef struct {
 
+#define xj_MAX_ERROR_TEXT_LENGTH xj_POOL_CHUNK_SIZE_IN_BYTES
+
+typedef struct {
 	xj_type_t type;
 	xj_generic_t value;
 } xj_item_t;
 
-int xj_parse(const char *source, size_t length, xj_item_t *item, xj_pool_t *pool);
-int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool);
-int xj_parsefile(const char *path, xj_item_t *item, xj_pool_t *pool);
-int xj_parsefile_2(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool);
-void xj_dump(xj_item_t item, FILE *f);
-void xj_free(xj_pool_t *pool);
+typedef struct {
+	int failed;
+	xj_pool_t *pool;
+	xj_item_t  root;
+	char  *message;
+	size_t offset;
+	size_t column;
+	size_t lineno;
+} xj_result_t;
+
+xj_result_t xj_parse(const char *source, size_t length, int flags);
+xj_result_t xj_parse_file(const char *path, int flags);
+
+void   xj_dump(xj_item_t item, FILE *f);
+void   xj_done(xj_result_t result);
+void   xj_print_message(xj_result_t result);
 size_t xj_length(xj_item_t item);
-int xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item);
+int    xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item);
 const char *xj_tocstring(const xj_item_t *item);
+
+int parse(const char *source, size_t length, xj_pool_t *pool, xj_type_t *type, xj_generic_t *value, int flags, char *error_buffer, size_t error_buffer_size, size_t *error_offset);

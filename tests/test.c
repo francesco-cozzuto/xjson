@@ -4,30 +4,25 @@
 
 int main()
 {
-	char buffer[1024];
-	size_t offset, column, lineno;
+	const char source[] = "{ \" }";
+	size_t length = sizeof(source)-1;
 
-	xj_pool_t pool;
-	xj_item_t item;
+	xj_result_t result = xj_parse(source, length, xj_ALLOW_LAZYNESS);
 
-	const char path[] = "samples/tattoos.json";
+	if(result.failed) {
 
-	if(!xj_parsefile_2(path, buffer, sizeof(buffer), &offset, &column, &lineno, xj_ALLOW_LAZYNESS, &item, &pool)) {
-
-		fprintf(stderr, "Error in %s:%ld:%ld, offset %ld: %s\n", path, column, lineno, offset, buffer);
+		fprintf(stderr, "Error in %ld:%ld, offset %ld: %s\n", result.column, result.lineno, result.offset, result.message);
 
 	} else {
-
-		fprintf(stderr, "%s\n", buffer);
 
 		int index = -1;
 		char *key = NULL;
 
-		while(xj_foreach(item, &index, &key, NULL))
+		while(xj_foreach(result.root, &index, &key, NULL))
 			printf("Key no. %d is \"%s\"\n", index, key);
 
-		xj_free(&pool);
 	}
 
+	xj_done(result);
 	return 0;
 }

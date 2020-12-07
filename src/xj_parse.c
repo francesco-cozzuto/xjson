@@ -104,82 +104,12 @@ static int skip_spaces(xj_context_t *ctx)
 	return 1;
 }
 
-static void get_position_from_offset(const char *source, size_t offset, size_t *_column, size_t *_lineno)
-{
-	size_t i = 0;
-	size_t lineno = 1;
-	size_t column = 1;
-	
-	while(i < offset) {
-
-		if(source[i++] == '\n') {
-
-			column = 1;
-			lineno++;
-
-		} else {
-
-			column++;
-		}
-	}
-
-	if(_column) *_column = column;
-	if(_lineno) *_lineno = lineno;
-}
-
 static int parse_value(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value);
 
-static int parse_2(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
+int parse(const char *source, size_t length, xj_pool_t *pool, xj_type_t *type, xj_generic_t *value, int flags, char *error_buffer, size_t error_buffer_size, size_t *error_offset)
 {
-	if(!skip_spaces(ctx)) {
-
-		xj_report(ctx, "The source is empty");
-		return 0;
-	}
-
-	if(!parse_value(ctx, type, value)) {
-
-		// The error was already reported.
-		return 0;
-	}
-	
-	if(skip_spaces(ctx)) {
-
-		xj_report(ctx, "The source contains something other than the root value");
-		return 0;
-	}
-	
-
-	return 1;
-}
-
-int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool)
-{
-	// Set default values for output arguments
-
-	if(error_offset) *error_offset = 0;
-	if(error_column) *error_column = 1;
-	if(error_lineno) *error_lineno = 1;
-
-	// Check for argument errors
-
-	if(pool == NULL) {
-
-		snprintf(error_buffer, error_buffer_size, "The pool pointer can't be null");
-		return 0;
-	}
-
-	if(source == NULL) {
-
-		snprintf(error_buffer, error_buffer_size, "The source pointer can't be null");
-		return 0;
-	}
-
-	if(length == 0) {
-
-		snprintf(error_buffer, error_buffer_size, "The source is empty");
-		return 0;
-	}
+	if(error_offset)
+		*error_offset = 0;
 
 	xj_context_t ctx;
 	ctx.flags = flags;
@@ -189,7 +119,6 @@ int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t err
 	ctx.length = length;
 	ctx.offset = 0;
 	ctx.pool = pool;
-
 #if xj_MONITOR_VALUE_KINDS
 	ctx.empty_object_count = 0;
 	ctx.empty_array_count = 0;
@@ -199,34 +128,41 @@ int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t err
 	ctx.unparsed_floats_count = 0;
 	ctx.unparsed_strings_count = 0;
 #endif
-
 	xj_stack_setup(&ctx.stack);
-	xj_pool_setup(pool);
 
-	xj_type_t type;
-	xj_generic_t value;
+	if(!skip_spaces(&ctx)) {
 
-	if(!parse_2(&ctx, &type, &value)) {
+		if(error_offset)
+			*error_offset = ctx.offset;
 
-		// The error was already reported.
-
-		if(error_offset) *error_offset = ctx.offset;
-		get_position_from_offset(ctx.source, ctx.offset, error_column, error_lineno);
-
-		xj_pool_release(ctx.pool);
+		xj_report(&ctx, "The source is empty");
 		xj_stack_free(&ctx.stack);
 		return 0;
 	}
 
-	if(item) {
+	if(!parse_value(&ctx, type, value)) {
 
-		item->type = type;
-		item->value = value;
+		if(error_offset)
+			*error_offset = ctx.offset;
+
+		// The error was already reported.
+		xj_stack_free(&ctx.stack);
+		return 0;
+	}
+	
+	if(skip_spaces(&ctx)) {
+
+		if(error_offset)
+			*error_offset = ctx.offset;
+
+		xj_report(&ctx, "The source contains something other than the root value");
+		xj_stack_free(&ctx.stack);
+		return 0;
 	}
 
 #if xj_MONITOR_VALUE_KINDS
 
-	snprintf(error_buffer, error_buffer_size, 
+	snprintf(error_buffere, error_buffer_size, 
 		"We good!\n"
 		"empty objects ...... %ld\n"
 		"empty arrays ....... %ld\n"
@@ -251,78 +187,6 @@ int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t err
 
 	xj_stack_free(&ctx.stack);
 	return 1;
-}
-
-int xj_parse(const char *source, size_t length, xj_item_t *item, xj_pool_t *pool)
-{
-	return xj_parse_2(source, length, NULL, 0, NULL, NULL, NULL, 0, item, pool);
-}
-
-int xj_parsefile_2(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool)
-{
-	// Set default values for output arguments
-
-	if(error_offset) *error_offset = 0;
-	if(error_column) *error_column = 1;
-	if(error_lineno) *error_lineno = 1;
-
-	// Do some check on the input arguments
-
-	if(path == NULL) {
-
-		snprintf(error_buffer, error_buffer_size, "The path can't be null");
-		return 0;
-	}
-
-	// Load the file in memory
-
-	FILE *f = fopen(path, "rb");
-
-	if(f == NULL) {
-
-		snprintf(error_buffer, error_buffer_size, "Failed to open \"%s\"", path);
-		return 0;
-	}
-
-	fseek(f, 0, SEEK_END);
-
-	size_t length = ftell(f);
-
-	fseek(f, 0, SEEK_SET);
-
-	char *source = malloc(length);
-
-	if(source == NULL) {
-
-		fclose(f);
-
-		snprintf(error_buffer, error_buffer_size, "Out of memory. Couldn't allocate memory to load \"%s\"", path);
-		return 0;
-	}
-
-	size_t loaded = fread(source, 1, length, f);
-
-	if(loaded != length) {
-
-		fclose(f);
-		free(source);
-
-		snprintf(error_buffer, error_buffer_size, "fread couldn't load all of \"%s\" in memory. Were expected %ld bytes but %ld were loaded by fread", path, length, loaded);
-		return 0;
-	}
-
-	fclose(f);
-
-	int result = xj_parse_2(source, length, error_buffer, error_buffer_size, error_offset, error_column, error_lineno, flags, item, pool);
-
-	free(source);
-
-	return result;
-}
-
-int xj_parsefile(const char *path, xj_item_t *item, xj_pool_t *pool)
-{
-	return xj_parsefile_2(path, NULL, 0, NULL, NULL, NULL, 0, item, pool);
 }
 
 static int parse_null(xj_context_t *ctx);

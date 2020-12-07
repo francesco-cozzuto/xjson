@@ -24,18 +24,14 @@ int main()
 		return -1;
 	}
 
-	xj_item_t number_item = xj_query(item, "some_data.numbers[%d]", 1);
-    
-    if(number_item.type & xj_INT) {
-        
-        printf("The number is %lld!", number_item.value.as_int);
-        
-    } else {
-    
-    }
-    
-	printf("Done!\n");
 
+	xj_item_t number_item = xj_query(item, "some_data.numbers[%d]", 1);
+
+    
+    printf("The number is %lld!", xj_as_int(number_item));
+
+
+	printf("Bye!\n");
 
 	xj_free(&pool);
 	return 0;
