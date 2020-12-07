@@ -193,6 +193,10 @@ void *xj_pool_request(xj_pool_t *pool, size_t size, int aligned);
 #define xj_FLOAT_LAZY_TRESHOLD 8
 #define xj_STRING_LAZY_TRESHOLD 32
 
+#ifndef xj_MONITOR_VALUE_KINDS
+#define xj_MONITOR_VALUE_KINDS 1
+#endif
+
 typedef struct {
 
 	int flags;
@@ -206,6 +210,16 @@ typedef struct {
 
 	xj_stack_t stack;
 	xj_pool_t *pool;
+
+#if xj_MONITOR_VALUE_KINDS
+	size_t empty_object_count;
+	size_t empty_array_count;
+	size_t small_strings_count;
+	size_t normal_strings_count;
+	size_t unparsed_ints_count;
+	size_t unparsed_floats_count;
+	size_t unparsed_strings_count;
+#endif
 
 } xj_context_t;
 

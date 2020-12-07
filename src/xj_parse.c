@@ -189,6 +189,17 @@ int xj_parse(const char *source, size_t length, char *error_buffer, size_t error
 	ctx.length = length;
 	ctx.offset = 0;
 	ctx.pool = pool;
+
+#if xj_MONITOR_VALUE_KINDS
+	ctx.empty_object_count = 0;
+	ctx.empty_array_count = 0;
+	ctx.small_strings_count = 0;
+	ctx.normal_strings_count = 0;
+	ctx.unparsed_ints_count = 0;
+	ctx.unparsed_floats_count = 0;
+	ctx.unparsed_strings_count = 0;
+#endif
+
 	xj_stack_setup(&ctx.stack);
 	xj_pool_setup(pool);
 
@@ -204,7 +215,30 @@ int xj_parse(const char *source, size_t length, char *error_buffer, size_t error
 		return 0;
 	}
 
+#if xj_MONITOR_VALUE_KINDS
+
+	snprintf(error_buffer, error_buffer_size, 
+		"We good!\n"
+		"empty objects ...... %ld\n"
+		"empty arrays ....... %ld\n"
+		"small strings ...... %ld\n"
+		"normal strings ..... %ld\n"
+		"unparsed ints ...... %ld\n"
+		"unparsed floats .... %ld\n"
+		"unparsed strings ... %ld",
+		ctx.empty_object_count,
+		ctx.empty_array_count,
+		ctx.small_strings_count,
+		ctx.normal_strings_count,
+		ctx.unparsed_ints_count,
+		ctx.unparsed_floats_count,
+		ctx.unparsed_strings_count);
+
+#else
+	
 	snprintf(error_buffer, error_buffer_size, "We good!");
+
+#endif
 
 	xj_stack_free(&ctx.stack);
 	return 1;
@@ -592,6 +626,10 @@ static int parse_number(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 
 		if(length > xj_FLOAT_LAZY_TRESHOLD && can_be_lazy(ctx)) {
 
+#if xj_MONITOR_VALUE_KINDS
+			ctx->unparsed_floats_count++;
+#endif
+
 			if(type) *type = xj_FLOAT | xj_UNPARSED;
 
 			if(!create_unparsed(ctx, offset, length, value))
@@ -613,6 +651,10 @@ static int parse_number(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 	} else {
 
 		if(length > xj_INT_LAZY_TRESHOLD && can_be_lazy(ctx)) {
+
+#if xj_MONITOR_VALUE_KINDS
+			ctx->unparsed_ints_count++;
+#endif
 
 			if(type) *type = xj_INT | xj_UNPARSED;
 
@@ -672,6 +714,10 @@ static int parse_string(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value,
 
 	if(length < 8) {
 
+#if xj_MONITOR_VALUE_KINDS
+		ctx->small_strings_count++;
+#endif
+
 		if(type) *type = xj_STRING | xj_IS_SMALL;
 
 		if(!create_small_string(ctx, offset, length, value))
@@ -681,6 +727,10 @@ static int parse_string(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value,
 
 	} else if(!is_key && length > xj_STRING_LAZY_TRESHOLD && can_be_lazy(ctx)) {
 
+#if xj_MONITOR_VALUE_KINDS
+		ctx->unparsed_strings_count++;
+#endif
+
 		if(type) *type = xj_STRING | xj_UNPARSED;
 
 		if(!create_unparsed(ctx, offset, length, value))
@@ -689,6 +739,10 @@ static int parse_string(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value,
 			return 0;
 
 	} else {
+
+#if xj_MONITOR_VALUE_KINDS
+		ctx->normal_strings_count++;
+#endif
 
 		if(type) *type = xj_STRING;
 
@@ -714,6 +768,10 @@ static int parse_array(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 	c = next(ctx);
 
 	if(c == ']') {
+
+#if xj_MONITOR_VALUE_KINDS
+	ctx->empty_array_count++;
+#endif
 
 		if(type) *type = xj_ARRAY;
 		if(value) *value = the_empty_array;		
@@ -784,6 +842,10 @@ static int parse_object(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 	c = next(ctx);
 
 	if(c == '}') {
+
+#if xj_MONITOR_VALUE_KINDS
+		ctx->empty_object_count++;
+#endif
 
 		if(type) *type = xj_OBJECT | xj_IS_SMALL;
 
@@ -969,10 +1031,12 @@ static int create_string(xj_context_t *ctx, size_t offset, size_t length, xj_gen
 
 static int create_small_string(xj_context_t *ctx, size_t offset, size_t length, xj_generic_t *value)
 {
+
 	if(value) {
 
 		memcpy(value->as_small_string, ctx->source + offset, length);
 		memset(value->as_small_string + length, 0, 8 - length);
+
 	}
 
 	return 1;
