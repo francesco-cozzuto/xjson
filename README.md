@@ -15,20 +15,26 @@ size_t length = sizeof(source)-1;
 
 int main()
 {
-	xj_pool_t pool;
-	xj_item_t item;
 
-	if(!xj_parse(source, length, &item, &pool)) {
+	xj_result_t result = xj_parse(source, length);
 
-		fprintf(stderr, "Failed!\n");
+	if(result.failed) {
+
+		fprintf(stderr, "Error in %ld:%ld, offset %ld: %s\n", 
+			result.column, 
+			result.lineno, 
+			result.offset, 
+			result.message);
+
+		xj_done(result);
 		return -1;
 	}
 
 
-	xj_item_t number_item = xj_query(item, "some_data.numbers[%d]", 1);
-
+	xj_item_t item = xj_query(result.root, "some_data.numbers[%d]", 1);
     
-    printf("The number is %lld!", xj_as_int(number_item));
+    if(xj_is_int(item))
+	    printf("The number is %lld!", item.as_int);
 
 
 	printf("Bye!\n");
