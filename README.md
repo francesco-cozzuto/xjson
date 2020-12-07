@@ -33,8 +33,8 @@ int main()
 
 	xj_item_t item = xj_query(result.root, "some_data.numbers[%d]", 1);
     
-    if(xj_is_int(item))
-	    printf("The number is %lld!", item.as_int);
+	if(xj_is_int(item))
+		printf("The number is %lld!", item.as_int);
 
 
 	printf("Bye!\n");
