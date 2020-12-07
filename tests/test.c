@@ -11,9 +11,11 @@ int main()
 	xj_type_t type;
 	xj_generic_t value;
 
-	if(!xj_parsefile("samples/3blue1brown.json", buffer, sizeof(buffer), &offset, &column, &lineno, 0, &type, &value, &pool)) {
+	const char path[] = "samples/sample_000.json";
 
-		fprintf(stderr, "Error at %ld:%ld, offset %ld: %s\n", column, lineno, offset, buffer);
+	if(!xj_parsefile(path, buffer, sizeof(buffer), &offset, &column, &lineno, 0, &type, &value, &pool)) {
+
+		fprintf(stderr, "Error in %s:%ld:%ld, offset %ld: %s\n", path, column, lineno, offset, buffer);
 
 	} else {
 

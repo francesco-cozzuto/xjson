@@ -1,5 +1,6 @@
 
 #include <string.h>
+#include <time.h>
 #include "xj.h"
 
 xj_generic_t the_empty_array = { .as_array = &(xj_array_t) { .size = 0, .types = NULL, .values = NULL } };
@@ -91,9 +92,11 @@ static inline int is_digit(char c)
 
 static int skip_spaces(xj_context_t *ctx)
 {
-	while(is_whitespace(next(ctx)));
+	char c;
 
-	if(current(ctx) == '\0')
+	while(is_whitespace(c = next(ctx)));
+
+	if(c == '\0')
 		return 0;
 
 	back(ctx);
@@ -139,12 +142,13 @@ static int parse_2(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 		// The error was already reported.
 		return 0;
 	}
-
+	
 	if(skip_spaces(ctx)) {
 
 		xj_report(ctx, "The source contains something other than the root value");
 		return 0;
 	}
+	
 
 	return 1;
 }
@@ -297,31 +301,42 @@ static int parse_value(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 
 	back(ctx);
 
+	int result;
+
 	switch(c) {
 
 		case 'n': 	if(type) *type = xj_NULL;
-				   	return parse_null(ctx);
+				   	result = parse_null(ctx);
+				   	break;
 
 		case 't': 	if(type) *type = xj_FALSE;
-				   	return parse_true(ctx);
+				   	result = parse_true(ctx);
+				   	break;
 
 		case 'f': 	if(type) *type = xj_FALSE;
-				   	return parse_false(ctx);
+				   	result = parse_false(ctx);
+				   	break;
 
-		case '[': 	return parse_array(ctx, type, value);
-		case '"': 	return parse_string(ctx, type, value, 0);
-		case '{': 	return parse_object(ctx, type, value);
+		case '[': 	result = parse_array(ctx, type, value);
+					break;
+
+		case '"': 	result = parse_string(ctx, type, value, 0);
+					break;
+
+		case '{': 	result = parse_object(ctx, type, value);
+					break;
 		
-		default : 	if(is_digit(c)) 
-				   		return parse_number(ctx, type, value);
+		default : 	if(is_digit(c)) {
+
+				   		result = parse_number(ctx, type, value);
+				   		break;
+				   	}
 				   	
 				   	xj_report(ctx, "Unexpected character [%c]. Was expected a value", c);
 				   	return 0;
 	}
 
-
-	abort();
-	return 0;
+	return result;
 }
 
 int parse_null(xj_context_t *ctx)
@@ -630,7 +645,7 @@ static int parse_string(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value,
 		return 0;
 	}
 
-	size_t offset = here(ctx);
+	size_t offset = here(ctx) + 1;
 
 	while((c = next(ctx)) != '\"' && c != '\0') {
 
@@ -769,6 +784,8 @@ static int parse_object(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 	c = next(ctx);
 
 	if(c == '}') {
+
+		if(type) *type = xj_OBJECT | xj_IS_SMALL;
 
 		if(value) 
 			*value = the_empty_object;
@@ -933,7 +950,12 @@ static int create_string(xj_context_t *ctx, size_t offset, size_t length, xj_gen
 			xj_report(ctx, "Out of memory. Failed to allocate a string object");
 			return 0;
 		}
-
+		/*
+		printf("allocating %ld bytes for a string [", sizeof(xj_string_t) + length + 1);
+		for(size_t i = 0; i < length; i++)
+			printf("%c", ctx->source[offset + i]);
+		printf("] at %p\n", string);
+		*/
 		string->length = length;
 		memcpy(string->content, ctx->source + offset, length);
 		string->content[length] = '\0';
@@ -1059,6 +1081,8 @@ static int create_small_object(xj_context_t *ctx, size_t item_count, xj_generic_
 		return 0;
 	}
 
+	object->key_types[0] = 0;
+
 	memset(object->map, 0, sizeof(u8) * object->map_size);
 
 	while(object->size < item_count) {
@@ -1132,6 +1156,8 @@ static int create_small_object(xj_context_t *ctx, size_t item_count, xj_generic_
 
 static int create_object(xj_context_t *ctx, size_t item_count, xj_generic_t *value)
 {
+	assert(0);
+
 	if(value == NULL)
 		return 1;
 

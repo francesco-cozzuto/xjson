@@ -8,7 +8,7 @@
 #endif
 
 #ifndef xj_VALGRIND_PADDING
-#define xj_VALGRIND_PADDING 0
+#define xj_VALGRIND_PADDING 8
 #endif
 
 /* ========================== */

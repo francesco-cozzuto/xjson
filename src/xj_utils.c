@@ -130,7 +130,9 @@ void xj_dump(xj_type_t type, xj_generic_t value, FILE *f, int file_is_small)
 
 		case xj_OBJECT 	| xj_IS_SMALL:break;
 		case xj_STRING 	| xj_IS_SMALL:break;
+		
 		default:
+		fprintf(stderr, "%s (%d)\n", xj_typename(type), type);
 		assert(0);
 	}
 }
