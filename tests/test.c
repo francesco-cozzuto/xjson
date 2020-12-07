@@ -20,6 +20,8 @@ int main()
 
 		fprintf(stderr, "%s\n", buffer);
 
+		xj_dump(item, stdout);
+
 		xj_free(&pool);
 	}
 

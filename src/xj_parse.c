@@ -335,7 +335,7 @@ static int parse_string(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value,
 
 static int create_small_string(xj_context_t *ctx, size_t offset, size_t length, xj_generic_t *value);
 static int create_small_object(xj_context_t *ctx, size_t item_count, xj_generic_t *value);
-static int create_unparsed(xj_context_t *ctx, size_t offset, size_t length, xj_generic_t *value);
+static int create_unparsed(xj_context_t *ctx, size_t offset, size_t length, xj_type_t *type, xj_generic_t *value);
 static int create_string(xj_context_t *ctx, size_t offset, size_t length, xj_generic_t *value);
 static int create_object(xj_context_t *ctx, size_t item_count, xj_generic_t *value);
 static int create_array(xj_context_t *ctx, size_t item_count, xj_generic_t *value);
@@ -649,12 +649,12 @@ static int parse_number(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 			ctx->unparsed_floats_count++;
 #endif
 
-			if(type) *type = xj_FLOAT | xj_UNPARSED;
-
-			if(!create_unparsed(ctx, offset, length, value))
+			if(!create_unparsed(ctx, offset, length, type, value))
 
 				// Already reported.
 				return 0;
+
+			if(type) *type |= xj_FLOAT;
 
 		} else {
 
@@ -675,12 +675,12 @@ static int parse_number(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 			ctx->unparsed_ints_count++;
 #endif
 
-			if(type) *type = xj_INT | xj_UNPARSED;
-
-			if(!create_unparsed(ctx, offset, length, value))
+			if(!create_unparsed(ctx, offset, length, type, value))
 
 				// Already reported.
 				return 0;
+
+			if(type) *type |= xj_INT;
 
 		} else {
 
@@ -750,12 +750,12 @@ static int parse_string(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value,
 		ctx->unparsed_strings_count++;
 #endif
 
-		if(type) *type = xj_STRING | xj_UNPARSED;
-
-		if(!create_unparsed(ctx, offset, length, value))
+		if(!create_unparsed(ctx, offset, length, type, value))
 
 			// Already reported.
 			return 0;
+
+		if(type) *type |= xj_STRING;
 
 	} else {
 
@@ -961,7 +961,7 @@ static int parse_object(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 	return 1;
 }
 
-static int create_unparsed(xj_context_t *ctx, size_t offset, size_t length, xj_generic_t *value)
+static int create_unparsed(xj_context_t *ctx, size_t offset, size_t length, xj_type_t *type, xj_generic_t *value)
 {
 	if(ctx->length < (u32) ~0) {
 
@@ -970,6 +970,9 @@ static int create_unparsed(xj_context_t *ctx, size_t offset, size_t length, xj_g
 			value->as_unparsed.offset = offset;
 			value->as_unparsed.length = length;
 		}
+
+		if(type) 
+			*type = xj_UNPARSED;
 
 	} else {
 
@@ -983,6 +986,9 @@ static int create_unparsed(xj_context_t *ctx, size_t offset, size_t length, xj_g
 
 		if(value)
 			value->as_unparsed_2 = u;
+
+		if(type) 
+			*type = xj_UNPARSED | xj_LONG_REACH;
 	}
 
 	return 1;
