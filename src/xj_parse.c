@@ -153,7 +153,7 @@ static int parse_2(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 	return 1;
 }
 
-int xj_parse(const char *source, size_t length, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_type_t *type, xj_generic_t *value, xj_pool_t *pool)
+int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool)
 {
 	// Set default values for output arguments
 
@@ -203,7 +203,10 @@ int xj_parse(const char *source, size_t length, char *error_buffer, size_t error
 	xj_stack_setup(&ctx.stack);
 	xj_pool_setup(pool);
 
-	if(!parse_2(&ctx, type, value)) {
+	xj_type_t type;
+	xj_generic_t value;
+
+	if(!parse_2(&ctx, &type, &value)) {
 
 		// The error was already reported.
 
@@ -213,6 +216,12 @@ int xj_parse(const char *source, size_t length, char *error_buffer, size_t error
 		xj_pool_release(ctx.pool);
 		xj_stack_free(&ctx.stack);
 		return 0;
+	}
+
+	if(item) {
+
+		item->type = type;
+		item->value = value;
 	}
 
 #if xj_MONITOR_VALUE_KINDS
@@ -244,7 +253,12 @@ int xj_parse(const char *source, size_t length, char *error_buffer, size_t error
 	return 1;
 }
 
-int xj_parsefile(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_type_t *type, xj_generic_t *value, xj_pool_t *pool)
+int xj_parse(const char *source, size_t length, xj_item_t *item, xj_pool_t *pool)
+{
+	return xj_parse_2(source, length, NULL, 0, NULL, NULL, NULL, 0, item, pool);
+}
+
+int xj_parsefile_2(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool)
 {
 	// Set default values for output arguments
 
@@ -299,11 +313,16 @@ int xj_parsefile(const char *path, char *error_buffer, size_t error_buffer_size,
 
 	fclose(f);
 
-	int result = xj_parse(source, length, error_buffer, error_buffer_size, error_offset, error_column, error_lineno, flags, type, value, pool);
+	int result = xj_parse_2(source, length, error_buffer, error_buffer_size, error_offset, error_column, error_lineno, flags, item, pool);
 
 	free(source);
 
 	return result;
+}
+
+int xj_parsefile(const char *path, xj_item_t *item, xj_pool_t *pool)
+{
+	return xj_parsefile_2(path, NULL, 0, NULL, NULL, NULL, 0, item, pool);
 }
 
 static int parse_null(xj_context_t *ctx);

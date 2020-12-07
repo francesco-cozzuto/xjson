@@ -19,6 +19,11 @@ void xj_pool_setup(xj_pool_t *pool)
 #endif
 }
 
+void xj_free(xj_pool_t *pool)
+{
+	xj_pool_release(pool);
+}
+
 void xj_pool_release(xj_pool_t *pool)
 {
 	xj_pool_chunk_t *chunk = pool->head.next;

@@ -8,12 +8,11 @@ int main()
 	size_t offset, column, lineno;
 
 	xj_pool_t pool;
-	xj_type_t type;
-	xj_generic_t value;
+	xj_item_t item;
 
 	const char path[] = "samples/3blue1brown.json";
 
-	if(!xj_parsefile(path, buffer, sizeof(buffer), &offset, &column, &lineno, xj_ALLOW_LAZYNESS, &type, &value, &pool)) {
+	if(!xj_parsefile_2(path, buffer, sizeof(buffer), &offset, &column, &lineno, xj_ALLOW_LAZYNESS, &item, &pool)) {
 
 		fprintf(stderr, "Error in %s:%ld:%ld, offset %ld: %s\n", path, column, lineno, offset, buffer);
 
@@ -21,9 +20,7 @@ int main()
 
 		fprintf(stderr, "%s\n", buffer);
 
-		xj_dump(type, value, stdout, 1);
-
-		xj_pool_release(&pool);
+		xj_free(&pool);
 	}
 
 	return 0;

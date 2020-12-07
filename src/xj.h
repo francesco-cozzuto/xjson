@@ -193,6 +193,10 @@ void *xj_pool_request(xj_pool_t *pool, size_t size, int aligned);
 #define xj_FLOAT_LAZY_TRESHOLD 8
 #define xj_STRING_LAZY_TRESHOLD 32
 
+#ifndef xj_MONITOR_PARSER
+#define xj_MONITOR_PARSER 0
+#endif
+
 #ifndef xj_MONITOR_VALUE_KINDS
 #define xj_MONITOR_VALUE_KINDS 1
 #endif
@@ -244,6 +248,15 @@ int  xj_compare_text(xj_type_t t1, xj_type_t t2, xj_generic_t v1, xj_generic_t v
 /* === EXPORTED STUFF === */
 /* ====================== */
 
-int xj_parsefile(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_type_t *type, xj_generic_t *value, xj_pool_t *pool);
-int xj_parse(const char *source, size_t length, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_type_t *type, xj_generic_t *value, xj_pool_t *pool);
+typedef struct {
+
+	xj_type_t type;
+	xj_generic_t value;
+} xj_item_t;
+
+int xj_parse(const char *source, size_t length, xj_item_t *item, xj_pool_t *pool);
+int xj_parse_2(const char *source, size_t length, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool);
+int xj_parsefile(const char *path, xj_item_t *item, xj_pool_t *pool);
+int xj_parsefile_2(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool);
 void xj_dump(xj_type_t type, xj_generic_t value, FILE *f, int file_is_small);
+void xj_free(xj_pool_t *pool);

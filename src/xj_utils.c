@@ -118,7 +118,9 @@ void xj_dump(xj_type_t type, xj_generic_t value, FILE *f, int file_is_small)
 		case xj_STRING:	fprintf(f, "%s", value.as_string->content);
 						break;
 
-		case xj_OBJECT:break;
+		case xj_OBJECT:
+		assert(0);
+		break;
 
 		case xj_INT 	| xj_UNPARSED:	
 		case xj_FLOAT 	| xj_UNPARSED:
@@ -128,8 +130,25 @@ void xj_dump(xj_type_t type, xj_generic_t value, FILE *f, int file_is_small)
 											fprintf(f, "<from %d, long %d>", value.as_unparsed_2->offset, value.as_unparsed_2->length);
 										break;
 
-		case xj_OBJECT 	| xj_IS_SMALL:break;
-		case xj_STRING 	| xj_IS_SMALL:break;
+		case xj_OBJECT 	| xj_IS_SMALL:
+		{
+			fprintf(f, "{ ");
+			for(int i = 0; i < value.as_small_object->size; i++) {
+
+				xj_dump(value.as_small_object->key_types[i], value.as_small_object->key_values[i], f, file_is_small);
+				fprintf(f, ": ");
+				xj_dump(value.as_small_object->item_types[i], value.as_small_object->item_values[i], f, file_is_small);
+			
+				if(i+1 < value.as_small_object->size)
+					fprintf(f, ", ");
+			}
+			fprintf(f, " }");
+		}
+		break;
+		
+		case xj_STRING 	| xj_IS_SMALL:
+		fprintf(f, "%s", value.as_small_string);
+		break;
 		
 		default:
 		fprintf(stderr, "%s (%d)\n", xj_typename(type), type);
