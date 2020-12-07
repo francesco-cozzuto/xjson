@@ -39,7 +39,7 @@ int main()
 
 	printf("Bye!\n");
 
-	xj_free(&pool);
+	xj_done(result);
 	return 0;
 }
 ```
