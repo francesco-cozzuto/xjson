@@ -269,5 +269,16 @@ void   xj_print_message(xj_result_t result);
 size_t xj_length(xj_item_t item);
 int    xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item);
 const char *xj_tocstring(const xj_item_t *item);
+const char *xj_typename(xj_type_t type);
+
+int xj_is_int(xj_item_t item);
+int xj_is_null(xj_item_t item);
+int xj_is_bool(xj_item_t item);
+int xj_is_true(xj_item_t item);
+int xj_is_false(xj_item_t item);
+int xj_is_float(xj_item_t item);
+int xj_is_array(xj_item_t item);
+int xj_is_object(xj_item_t item);
+int xj_is_string(xj_item_t item);
 
 int parse(const char *source, size_t length, xj_pool_t *pool, xj_type_t *type, xj_generic_t *value, int flags, char *error_buffer, size_t error_buffer_size, size_t *error_offset);

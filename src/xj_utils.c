@@ -343,3 +343,48 @@ int xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item)
 
 	return 1;
 }
+
+int xj_is_object(xj_item_t item)
+{
+	return item.type & xj_OBJECT;
+}
+
+int xj_is_array(xj_item_t item)
+{
+	return item.type & xj_ARRAY;
+}
+
+int xj_is_string(xj_item_t item)
+{
+	return item.type & xj_STRING;
+}
+
+int xj_is_int(xj_item_t item)
+{
+	return item.type & xj_INT;
+}
+
+int xj_is_float(xj_item_t item)
+{
+	return item.type & xj_FLOAT;
+}
+
+int xj_is_null(xj_item_t item)
+{
+	return item.type & xj_NULL;
+}
+
+int xj_is_true(xj_item_t item)
+{
+	return item.type & xj_TRUE;
+}
+
+int xj_is_false(xj_item_t item)
+{
+	return item.type & xj_FALSE;
+}
+
+int xj_is_bool(xj_item_t item)
+{
+	return item.type & (xj_TRUE | xj_FALSE);
+}

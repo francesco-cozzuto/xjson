@@ -1,28 +1,86 @@
 
 #include <stdio.h>
 #include <xjson.h>
+#include "minunit.h"
 
-int main()
-{
-	const char source[] = "{ \" }";
-	size_t length = sizeof(source)-1;
+int tests_run = 0;
 
-	xj_result_t result = xj_parse(source, length, xj_ALLOW_LAZYNESS);
+static char *test_empty_source() {
+	
+	{
+		xj_result_t result = xj_parse(NULL, 0, 0);
 
-	if(result.failed) {
+		mu_assert("error, result.failed == 0", result.failed == 1);
+		mu_assert("error, result.message == NULL", result.message != NULL);
+		mu_assert("error, result.offset != 0", result.offset == 0);
+		mu_assert("error, result.column != 1", result.column == 1);
+		mu_assert("error, result.lineno != 1", result.lineno == 1);
+		mu_assert("error, result.pool == NULL", result.pool != NULL);
 
-		fprintf(stderr, "Error in %ld:%ld, offset %ld: %s\n", result.column, result.lineno, result.offset, result.message);
+		xj_done(result);
+	}
+
+	{
+		xj_result_t result = xj_parse("", 0, 0);
+
+		mu_assert("error, result.failed == 0", result.failed == 1);
+		mu_assert("error, result.message == NULL", result.message != NULL);
+		mu_assert("error, result.offset != 0", result.offset == 0);
+		mu_assert("error, result.column != 1", result.column == 1);
+		mu_assert("error, result.lineno != 1", result.lineno == 1);
+		mu_assert("error, result.pool == NULL", result.pool != NULL);
+
+		xj_done(result);
+	}
+	return NULL;
+}
+
+static char *test_empty_object() {
+
+	const char sample[] = "{}";
+
+	xj_result_t result = xj_parse(sample, 0, 0);
+
+	mu_assert("error, result.failed == 0", result.failed != 0);
+	mu_assert("error, result.message == NULL", result.message != NULL);
+	mu_assert("error, result.offset != 0", result.offset == 0);
+	mu_assert("error, result.column != 1", result.column == 1);
+	mu_assert("error, result.lineno != 1", result.lineno == 1);
+	mu_assert("error, result.pool == NULL", result.pool != NULL);
+
+	printf("[%s]\n", xj_typename(result.root.type));
+
+	mu_assert("error, !is_object(result.root)", xj_is_object(result.root));
+
+	size_t size = xj_length(result.root);
+
+	mu_assert("error, xj_length(result.root) != 0", size == 0);
+
+	xj_done(result);
+	return NULL;
+}
+
+static char *all_tests() {
+
+	mu_run_test(test_empty_source);
+	mu_run_test(test_empty_object);
+	return NULL;
+}
+
+int main() {
+
+	char *result = all_tests();
+
+	if (result != NULL) {
+
+		printf("%s\n", result);
 
 	} else {
 
-		int index = -1;
-		char *key = NULL;
-
-		while(xj_foreach(result.root, &index, &key, NULL))
-			printf("Key no. %d is \"%s\"\n", index, key);
-
+		printf("ALL TESTS PASSED\n");
 	}
+	
+	printf("Tests run: %d\n", tests_run);
 
-	xj_done(result);
-	return 0;
+	return result != 0;
 }
