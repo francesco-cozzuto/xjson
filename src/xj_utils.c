@@ -199,3 +199,128 @@ size_t xj_length(xj_item_t item)
 		assert(0);		
 	}
 }
+
+const char *xj_tocstring_2(const xj_type_t type, const xj_generic_t *value)
+{
+	switch(type) {
+
+		case xj_INT: return NULL;
+		case xj_NULL: return NULL;
+		case xj_TRUE: return NULL;
+		case xj_FALSE: return NULL;
+		case xj_FLOAT: return NULL;
+		case xj_STRING:	return value->as_string->content;
+
+		case xj_INT 	| xj_UNPARSED: return NULL;
+		case xj_FLOAT 	| xj_UNPARSED: return NULL;
+		case xj_STRING 	| xj_UNPARSED: return NULL;
+
+		case xj_INT 	| xj_UNPARSED | xj_LONG_REACH: 
+		case xj_FLOAT 	| xj_UNPARSED | xj_LONG_REACH: 
+		case xj_STRING 	| xj_UNPARSED | xj_LONG_REACH: return NULL;
+
+		case xj_STRING 	| xj_IS_SMALL: return value->as_small_string;
+		
+		case xj_ARRAY: return NULL;
+		case xj_OBJECT: return NULL;
+		case xj_OBJECT | xj_IS_SMALL: return NULL;
+		
+		default:
+		fprintf(stderr, "%s (%d)\n", xj_typename(type), type);
+		assert(0);
+	}
+
+	return NULL;
+}
+
+const char *xj_tocstring(const xj_item_t *item)
+{
+	return xj_tocstring_2(item->type, &item->value);
+}
+
+int xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item)
+{
+	(*i)++;
+
+	if(*i < 0)
+		return 0;
+
+	if(key)
+		*key = NULL;
+
+	xj_type_t    child_item_type;
+	xj_generic_t child_item_value;
+
+	switch(item.type) {
+
+		case xj_INT: return 0;
+		case xj_NULL: return 0;
+		case xj_TRUE: return 0;
+		case xj_FALSE: return 0;
+		case xj_FLOAT: return 0;
+		case xj_STRING:	return 0;
+
+		case xj_INT 	| xj_UNPARSED: 
+		case xj_FLOAT 	| xj_UNPARSED: 
+		case xj_STRING 	| xj_UNPARSED: return 0;
+
+		case xj_INT 	| xj_UNPARSED | xj_LONG_REACH: 
+		case xj_FLOAT 	| xj_UNPARSED | xj_LONG_REACH: 
+		case xj_STRING 	| xj_UNPARSED | xj_LONG_REACH: return 0;
+
+		case xj_STRING 	| xj_IS_SMALL: return 0;
+		
+		case xj_ARRAY: 
+
+		if(*i >= item.value.as_array->size)
+			return 0;
+
+		child_item_type  = item.value.as_array->types[*i];
+		child_item_value = item.value.as_array->values[*i];
+
+		break;
+		
+		case xj_OBJECT: 
+		{
+			if(*i >= item.value.as_object->size)
+				return 0;
+
+			if(key) {
+
+				*key = xj_tocstring_2(item.value.as_object->key_types[*i], item.value.as_object->key_values + *i);
+			}
+			
+			child_item_type  = item.value.as_object->item_types[*i];
+			child_item_value = item.value.as_object->item_values[*i];
+
+			break;
+		}
+
+		case xj_OBJECT 	| xj_IS_SMALL: 
+		{
+			if(*i >= item.value.as_small_object->size)
+				return 0;
+
+			if(key) {
+
+				*key = xj_tocstring_2(item.value.as_small_object->key_types[*i], item.value.as_small_object->key_values + *i);
+			}
+
+			child_item_type  = item.value.as_small_object->item_types[*i];
+			child_item_value = item.value.as_small_object->item_values[*i];
+
+			break;
+		}
+		
+		default:
+		fprintf(stderr, "%s (%d)\n", xj_typename(item.type), item.type);
+		assert(0);
+	}
+
+	if(child_item) {
+		child_item->type  = child_item_type;
+		child_item->value = child_item_value;
+	}
+
+	return 1;
+}

@@ -256,3 +256,5 @@ int xj_parsefile_2(const char *path, char *error_buffer, size_t error_buffer_siz
 void xj_dump(xj_item_t item, FILE *f);
 void xj_free(xj_pool_t *pool);
 size_t xj_length(xj_item_t item);
+int xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item);
+const char *xj_tocstring(const xj_item_t *item);

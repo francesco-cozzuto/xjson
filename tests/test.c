@@ -20,7 +20,11 @@ int main()
 
 		fprintf(stderr, "%s\n", buffer);
 
-		xj_dump(item, stdout);
+		int index = -1;
+		char *key = NULL;
+
+		while(xj_foreach(item, &index, &key, NULL))
+			printf("Key no. %d is \"%s\"\n", index, key);
 
 		xj_free(&pool);
 	}
