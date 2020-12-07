@@ -10,7 +10,7 @@ int main()
 	xj_pool_t pool;
 	xj_item_t item;
 
-	const char path[] = "samples/3blue1brown.json";
+	const char path[] = "samples/tattoos.json";
 
 	if(!xj_parsefile_2(path, buffer, sizeof(buffer), &offset, &column, &lineno, xj_ALLOW_LAZYNESS, &item, &pool)) {
 

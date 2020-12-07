@@ -255,3 +255,4 @@ int xj_parsefile(const char *path, xj_item_t *item, xj_pool_t *pool);
 int xj_parsefile_2(const char *path, char *error_buffer, size_t error_buffer_size, size_t *error_offset, size_t *error_column, size_t *error_lineno, int flags, xj_item_t *item, xj_pool_t *pool);
 void xj_dump(xj_item_t item, FILE *f);
 void xj_free(xj_pool_t *pool);
+size_t xj_length(xj_item_t item);

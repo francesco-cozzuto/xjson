@@ -169,3 +169,33 @@ void xj_dump(xj_item_t item, FILE *f)
 		assert(0);
 	}
 }
+
+size_t xj_length(xj_item_t item)
+{
+	switch(item.type) {
+
+		case xj_INT: return 0;
+		case xj_NULL: return 0;
+		case xj_TRUE: return 0;
+		case xj_FALSE: return 0;
+		case xj_FLOAT: return 0;
+		case xj_ARRAY: return item.value.as_array->size;
+		case xj_STRING:	return item.value.as_string->length;
+		case xj_OBJECT: return item.value.as_object->size;
+
+		case xj_INT 	| xj_UNPARSED: 
+		case xj_FLOAT 	| xj_UNPARSED: 
+		case xj_STRING 	| xj_UNPARSED: return item.value.as_unparsed.length;
+
+		case xj_INT 	| xj_UNPARSED | xj_LONG_REACH: 
+		case xj_FLOAT 	| xj_UNPARSED | xj_LONG_REACH: 
+		case xj_STRING 	| xj_UNPARSED | xj_LONG_REACH: return item.value.as_unparsed_2->length;
+
+		case xj_OBJECT 	| xj_IS_SMALL: return item.value.as_small_object->size;
+		case xj_STRING 	| xj_IS_SMALL: return strlen(item.value.as_small_string);
+		
+		default:
+		fprintf(stderr, "%s (%d)\n", xj_typename(item.type), item.type);
+		assert(0);		
+	}
+}
