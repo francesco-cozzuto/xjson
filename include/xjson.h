@@ -32,7 +32,7 @@ typedef struct {
 typedef struct {
 	int failed;
 	void *pool;
-	xj_item_t  root;
+	xj_item_t root;
 	char  *message;
 	size_t offset;
 	size_t column;
@@ -41,7 +41,7 @@ typedef struct {
 
 xj_result_t xj_parse(const char *source, size_t length, int flags);
 xj_result_t xj_parse_file(const char *path, int flags);
-void   		xj_print_message(xj_result_t result);
+void   		xj_print(xj_result_t result);
 void   		xj_done(xj_result_t result);
 
 size_t 		xj_length(xj_item_t item);
@@ -56,6 +56,7 @@ int xj_is_float(xj_item_t item);
 int xj_is_array(xj_item_t item);
 int xj_is_object(xj_item_t item);
 int xj_is_string(xj_item_t item);
+int xj_is_number(xj_item_t item);
 int xj_is_undefined(xj_item_t item);
 
 xj_item_t xj_select_by_index(xj_item_t item, size_t index);

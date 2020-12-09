@@ -790,6 +790,12 @@ static int parse_object(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 
 		item_count++;
 
+		if(!skip_spaces(ctx)) {
+
+			xj_report(ctx, "Unexpected end of source after an object item. Was expected [,] or [}]");
+			return 0;
+		}
+
 		c = next(ctx);
 
 		if(c == '}')

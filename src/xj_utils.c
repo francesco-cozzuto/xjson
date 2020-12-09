@@ -399,6 +399,11 @@ int xj_is_float(xj_item_t item)
 	return item.type & xj_FLOAT;
 }
 
+int xj_is_number(xj_item_t item)
+{
+	return item.type & (xj_FLOAT | xj_INT);
+}
+
 int xj_is_null(xj_item_t item)
 {
 	return item.type & xj_NULL;

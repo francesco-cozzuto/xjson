@@ -265,7 +265,7 @@ xj_result_t xj_parse_file(const char *path, int flags);
 
 void   xj_dump(xj_item_t item, FILE *f);
 void   xj_done(xj_result_t result);
-void   xj_print_message(xj_result_t result);
+void   xj_print(xj_result_t result);
 size_t xj_length(xj_item_t item);
 int    xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item);
 const char *xj_tocstring(const xj_item_t *item);
@@ -280,6 +280,7 @@ int xj_is_float(xj_item_t item);
 int xj_is_array(xj_item_t item);
 int xj_is_object(xj_item_t item);
 int xj_is_string(xj_item_t item);
+int xj_is_number(xj_item_t item);
 int xj_is_undefined(xj_item_t item);
 
 xj_item_t xj_select_by_index(xj_item_t item, size_t index);
