@@ -226,7 +226,7 @@ static int parse_value(xj_context_t *ctx, xj_type_t *type, xj_generic_t *value)
 				   	result = parse_null(ctx);
 				   	break;
 
-		case 't': 	if(type) *type = xj_FALSE;
+		case 't': 	if(type) *type = xj_TRUE;
 				   	result = parse_true(ctx);
 				   	break;
 

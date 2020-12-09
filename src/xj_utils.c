@@ -23,6 +23,9 @@ void *xj_malloc(xj_context_t *ctx, size_t size, int aligned)
 const char *xj_typename(xj_type_t type)
 {
 	switch(type) {
+
+		case xj_UNDEFINED: return "xj_UNDEFINED";
+
 		case xj_INT: return "xj_INT";
 		case xj_NULL: return "xj_NULL";
 		case xj_TRUE: return "xj_TRUE";
@@ -42,6 +45,8 @@ const char *xj_typename(xj_type_t type)
 
 		case xj_OBJECT 	| xj_IS_SMALL: return "xj_OBJECT | xj_IS_SMALL";
 		case xj_STRING 	| xj_IS_SMALL: return "xj_STRING | xj_IS_SMALL";
+
+		case 0: return "\\0";
 
 		default: return "???";
 	}
@@ -102,7 +107,7 @@ int xj_compare_text_2(xj_type_t t, xj_generic_t v, const char *text, size_t leng
 		if(v.as_string->length != length)
 			return 0;
 
-		return !strncmp(v.as_small_string, text, length);
+		return !strncmp(v.as_string->content, text, length);
 	
 		default:
 		fprintf(stderr, "xj_compare_text_2 on invalid value [%s]\n", xj_typename(t));
@@ -445,46 +450,18 @@ xj_item_t xj_select_by_index(xj_item_t item, size_t index)
 
 xj_item_t xj_select_by_key_2(xj_item_t item, const char *key, size_t length)
 {
+
 	if(!xj_is_object(item)) {
 
 		fprintf(stderr, "Uoops! Key selection on something that is not an object!\n");
 		assert(0);
 	}
 
-	long hash, mask, perturb, i, j;
+	size_t hash, mask, perturb, i, j;
 
 	hash = perturb = xj_hash_raw_text(key, length);
 
 	if(item.type & xj_IS_SMALL) {
-
-		mask = item.value.as_object->map_size - 1;
-
-		i = hash & mask;
-
-		while(1) {
-
-			j = item.value.as_object->map[j];
-
-			if(j == 0) {
-
-				// The key is not contained
-				return (xj_item_t) { .type = xj_UNDEFINED };
-			}
-
-			xj_type_t type = item.value.as_object->item_types[j-1];
-			xj_generic_t value = item.value.as_object->item_values[j-1];
-
-			if(xj_compare_text_2(type, value, key, length))
-
-				// Yoooo. Found it.
-		
-				return (xj_item_t) { .type = type, .value = value };
-			
-			perturb >>= 5;
-			i = (i * 5 + perturb + 1) & mask;
-		}
-
-	} else {
 
 		mask = item.value.as_small_object->map_size - 1;
 
@@ -492,7 +469,7 @@ xj_item_t xj_select_by_key_2(xj_item_t item, const char *key, size_t length)
 
 		while(1) {
 
-			j = item.value.as_small_object->map[j];
+			j = item.value.as_small_object->map[i];
 
 			if(j == 0) {
 
@@ -500,14 +477,46 @@ xj_item_t xj_select_by_key_2(xj_item_t item, const char *key, size_t length)
 				return (xj_item_t) { .type = xj_UNDEFINED };
 			}
 
-			xj_type_t type = item.value.as_small_object->item_types[j-1];
-			xj_generic_t value = item.value.as_small_object->item_values[j-1];
+			xj_type_t type = item.value.as_small_object->key_types[j-1];
+			xj_generic_t value = item.value.as_small_object->key_values[j-1];
 
 			if(xj_compare_text_2(type, value, key, length))
 
 				// Yoooo. Found it.
 		
-				return (xj_item_t) { .type = type, .value = value };
+				return (xj_item_t) { .type = item.value.as_small_object->item_types[j-1], 
+									 .value = item.value.as_small_object->item_values[j-1] };
+			
+			perturb >>= 5;
+			i = (i * 5 + perturb + 1) & mask;
+		}
+
+	} else {
+
+		mask = item.value.as_object->map_size - 1;
+
+		i = hash & mask;
+
+		while(1) {
+
+			j = item.value.as_object->map[i];
+
+			if(j == 0) {
+
+				// The key is not contained
+				return (xj_item_t) { .type = xj_UNDEFINED };
+			}
+
+			xj_type_t type = item.value.as_object->key_types[j-1];
+			xj_generic_t value = item.value.as_object->key_values[j-1];
+
+			if(xj_compare_text_2(type, value, key, length))
+
+				// Yoooo. Found it.
+		
+				return (xj_item_t) { .type = item.value.as_object->item_types[j-1], 
+									 .value = item.value.as_object->item_values[j-1] };
+			
 			
 			perturb >>= 5;
 			i = (i * 5 + perturb + 1) & mask;
