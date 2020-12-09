@@ -39,16 +39,14 @@ static char *test_empty_object() {
 
 	const char sample[] = "{}";
 
-	xj_result_t result = xj_parse(sample, 0, 0);
+	xj_result_t result = xj_parse(sample, sizeof(sample)-1, 0);
 
-	mu_assert("error, result.failed == 0", result.failed != 0);
+	mu_assert("error, result.failed == 0", result.failed == 0);
 	mu_assert("error, result.message == NULL", result.message != NULL);
 	mu_assert("error, result.offset != 0", result.offset == 0);
 	mu_assert("error, result.column != 1", result.column == 1);
 	mu_assert("error, result.lineno != 1", result.lineno == 1);
 	mu_assert("error, result.pool == NULL", result.pool != NULL);
-
-	printf("[%s]\n", xj_typename(result.root.type));
 
 	mu_assert("error, !is_object(result.root)", xj_is_object(result.root));
 

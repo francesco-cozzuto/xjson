@@ -47,6 +47,24 @@ const char *xj_typename(xj_type_t type)
 	}
 }
 
+long xj_hash_raw_text(const char *text, size_t length)
+{
+	if(length == 0)
+		return 0;
+
+	const char *p = text;
+	long length2 = length;
+
+	long x = *p << 7;
+
+	while(--length2 >= 0)
+		x = (1000003*x) ^ *p++;
+
+	x ^= length;
+
+	return x;
+}
+
 long xj_hash_text(xj_type_t type, xj_generic_t value)
 {
 	char *content;
@@ -69,20 +87,27 @@ long xj_hash_text(xj_type_t type, xj_generic_t value)
 		assert(0);
 	}
 
-	if(length == 0)
-		return 0;
+	return xj_hash_raw_text(content, length);
+}
 
-	char *p = content;
-	long length2 = length;
+int xj_compare_text_2(xj_type_t t, xj_generic_t v, const char *text, size_t length)
+{
+	switch(t) {
 
-	long x = *p << 7;
+		case xj_STRING | xj_IS_SMALL:
+		return !strncmp(v.as_small_string, text, length);
 
-	while(--length2 >= 0)
-		x = (1000003*x) ^ *p++;
+		case xj_STRING:
 
-	x ^= length;
+		if(v.as_string->length != length)
+			return 0;
 
-	return x;
+		return !strncmp(v.as_small_string, text, length);
+	
+		default:
+		fprintf(stderr, "xj_compare_text_2 on invalid value [%s]\n", xj_typename(t));
+		assert(0);
+	}
 }
 
 int xj_compare_text(xj_type_t t1, xj_type_t t2, xj_generic_t v1, xj_generic_t v2)
@@ -344,6 +369,11 @@ int xj_foreach(xj_item_t item, int *i, char **key, xj_item_t *child_item)
 	return 1;
 }
 
+int xj_is_undefined(xj_item_t item)
+{
+	return item.type & xj_UNDEFINED;
+}
+
 int xj_is_object(xj_item_t item)
 {
 	return item.type & xj_OBJECT;
@@ -387,4 +417,102 @@ int xj_is_false(xj_item_t item)
 int xj_is_bool(xj_item_t item)
 {
 	return item.type & (xj_TRUE | xj_FALSE);
+}
+
+xj_item_t xj_select_by_index(xj_item_t item, size_t index)
+{
+	switch(item.type) {
+
+		case xj_ARRAY:
+		if(item.value.as_array->size <= index) {
+
+			// Index out of range
+			return (xj_item_t) { .type = xj_NULL };
+		}
+
+		return (xj_item_t) { .type = item.value.as_array->types[index], .value = item.value.as_array->values[index] };
+
+		default:
+		fprintf(stderr, "Uoops! Index selection on something that is not an array!\n");
+		assert(0);
+	}
+}
+
+xj_item_t xj_select_by_key_2(xj_item_t item, const char *key, size_t length)
+{
+	if(!xj_is_object(item)) {
+
+		fprintf(stderr, "Uoops! Key selection on something that is not an object!\n");
+		assert(0);
+	}
+
+	long hash, mask, perturb, i, j;
+
+	hash = perturb = xj_hash_raw_text(key, length);
+
+	if(item.type & xj_IS_SMALL) {
+
+		mask = item.value.as_object->map_size - 1;
+
+		i = hash & mask;
+
+		while(1) {
+
+			j = item.value.as_object->map[j];
+
+			if(j == 0) {
+
+				// The key is not contained
+				return (xj_item_t) { .type = xj_UNDEFINED };
+			}
+
+			xj_type_t type = item.value.as_object->item_types[j-1];
+			xj_generic_t value = item.value.as_object->item_values[j-1];
+
+			if(xj_compare_text_2(type, value, key, length))
+
+				// Yoooo. Found it.
+		
+				return (xj_item_t) { .type = type, .value = value };
+			
+			perturb >>= 5;
+			i = (i * 5 + perturb + 1) & mask;
+		}
+
+	} else {
+
+		mask = item.value.as_small_object->map_size - 1;
+
+		i = hash & mask;
+
+		while(1) {
+
+			j = item.value.as_small_object->map[j];
+
+			if(j == 0) {
+
+				// The key is not contained
+				return (xj_item_t) { .type = xj_UNDEFINED };
+			}
+
+			xj_type_t type = item.value.as_small_object->item_types[j-1];
+			xj_generic_t value = item.value.as_small_object->item_values[j-1];
+
+			if(xj_compare_text_2(type, value, key, length))
+
+				// Yoooo. Found it.
+		
+				return (xj_item_t) { .type = type, .value = value };
+			
+			perturb >>= 5;
+			i = (i * 5 + perturb + 1) & mask;
+		}
+	}
+
+	return (xj_item_t) { .type = xj_UNDEFINED };
+}
+
+xj_item_t xj_select_by_key(xj_item_t item, const char *key)
+{
+	return xj_select_by_key_2(item, key, strlen(key));
 }

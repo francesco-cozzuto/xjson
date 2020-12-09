@@ -8,10 +8,11 @@ enum {
 	xj_ARRAY 	= 1 << 5,
 	xj_STRING 	= 1 << 6,
 	xj_OBJECT 	= 1 << 7,
+	xj_UNDEFINED = 1 << 8,
 
-	xj_UNPARSED = 1 << 8, // Int, float, string
-	xj_IS_SMALL = 1 << 9, // Object, string
-	xj_LONG_REACH = 1 << 10, // Stuff with "xj_UNPARSED"
+	xj_UNPARSED = 1 << 9, // Int, float, string
+	xj_IS_SMALL = 1 << 10, // Object, string
+	xj_LONG_REACH = 1 << 11, // Stuff with "xj_UNPARSED"
 };
 
 enum {
@@ -55,5 +56,10 @@ int xj_is_float(xj_item_t item);
 int xj_is_array(xj_item_t item);
 int xj_is_object(xj_item_t item);
 int xj_is_string(xj_item_t item);
+int xj_is_undefined(xj_item_t item);
+
+xj_item_t xj_select_by_index(xj_item_t item, size_t index);
+xj_item_t xj_select_by_key(xj_item_t item, const char *key);
+xj_item_t xj_select_by_key_2(xj_item_t item, const char *key, size_t length);
 
 const char *xj_typename(unsigned short type);
